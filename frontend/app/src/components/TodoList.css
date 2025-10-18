@@ -1,0 +1,12 @@
+/* keep it tiny */
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+li {
+  background: #fff;
+  margin-bottom: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
