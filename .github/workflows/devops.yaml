@@ -59,15 +59,14 @@ jobs:
         run: terraform init -upgrade
 
       - name: Terraform Plan
-        working-directory: Terraform
-        run: terraform plan \
+        run: terraform plan -chdir=Terraform \
           -var="aws_region=us-east-1" \
           -var="cluster_name=devops-eks-cluster" \
           -var="cluster_version=1.27"
 
       - name: Terraform Apply
         working-directory: Terraform
-        run: terraform apply -auto-approve \
+        run: terraform apply -auto-approve -chdir=Terraform \
           -var="aws_region=us-east-1" \
           -var="cluster_name=devops-eks-cluster" \
           -var="cluster_version=1.27"
