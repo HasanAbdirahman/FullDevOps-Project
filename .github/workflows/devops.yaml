@@ -22,20 +22,18 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 3️⃣ Build backend image
-      - name: Build Backend Image
+     -  name: Build Backend Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/devops-backend:${{ github.sha }} ../../backend
-          docker push ${{ secrets.DOCKER_USERNAME }}/devops-backend:${{ github.sha }}
+          docker build -t <dockerhub-username>/devops-backend:${{ github.sha }} ./backend
+          docker push <dockerhub-username>/devops-backend:${{ github.sha }}
 
-      # 4️⃣ Build frontend image with backend URL
-      - name: Build Frontend Image
+    -   name: Build Frontend Image
         run: |
           docker build \
-            --build-arg REACT_APP_API_URL=http://backend-service:4000/api \
-            -t ${{ secrets.DOCKER_USERNAME }}/devops-frontend:${{ github.sha }} \
-            ../../frontend
-          docker push ${{ secrets.DOCKER_USERNAME }}/devops-frontend:${{ github.sha }}
+          --build-arg REACT_APP_API_URL=http://backend-service:4000/api \
+          -t <dockerhub-username>/devops-frontend:${{ github.sha }} \
+          ./frontend/app
+          docker push <dockerhub-username>/devops-frontend:${{ github.sha }}
 
   deploy-to-kubernetes:
     name: Deploy to Kubernetes
