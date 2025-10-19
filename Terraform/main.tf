@@ -15,16 +15,16 @@ module "vpc" {
   single_nat_gateway = true
 }
 
-
-
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "18.29.6"  # stable version for old syntax
+  version = "21.4.0"
 
-  cluster_name    = var.cluster_name
-  cluster_version = var.cluster_version
-  subnets         = module.vpc.private_subnets
-  vpc_id          = module.vpc.vpc_id
+  cluster = {
+    name    = var.cluster_name
+    version = var.cluster_version
+    vpc_id  = module.vpc.vpc_id
+    subnets = module.vpc.private_subnets
+  }
 
   node_groups = {
     default = {
