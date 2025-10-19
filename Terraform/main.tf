@@ -13,23 +13,24 @@ module "vpc" {
   enable_nat_gateway = true
   single_nat_gateway = true
 }
-
 module "eks" {
-  source          = "terraform-aws-modules/eks/aws"
-  version         = "21.1.0"
+  source  = "terraform-aws-modules/eks/aws"
+  version = "21.1.0"
 
-  cluster_name    = var.cluster_name
-  cluster_version = var.cluster_version
-  subnets         = module.vpc.private_subnets
-  vpc_id          = module.vpc.vpc_id
+  cluster = {
+    name    = var.cluster_name
+    version = var.cluster_version
+  }
 
-  node_groups = {
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  eks_managed_node_groups = {
     default = {
-      desired_capacity = 2
-      max_capacity     = 3
-      min_capacity     = 1
-
-      instance_type = "t3.medium"
+      desired_size = 2
+      max_size     = 3
+      min_size     = 1
+      instance_types = ["t3.medium"]
     }
   }
 
