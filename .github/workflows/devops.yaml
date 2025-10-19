@@ -1,4 +1,4 @@
-name: CI/CD Devops Pipeline
+name: CI/CD DevOps Pipeline
 
 on:
   push:
@@ -15,27 +15,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Login to Docker Hub
+      # 2️⃣ Login to Docker Hub using secrets
       - name: Docker login
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 3️⃣ Build Backend Image
+      # 3️⃣ Build and push backend image
       - name: Build Backend Image
         run: |
-          docker build -t <dockerhub-username>/devops-backend:${{ github.sha }} ./backend
-          docker push <dockerhub-username>/devops-backend:${{ github.sha }}
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/devops-backend:${{ github.sha }} ./backend
+          docker push ${{ secrets.DOCKER_USERNAME }}/devops-backend:${{ github.sha }}
 
-      # 4️⃣ Build Frontend Image
+      # 4️⃣ Build and push frontend image
       - name: Build Frontend Image
         run: |
           docker build \
             --build-arg REACT_APP_API_URL=http://backend-service:4000/api \
-            -t <dockerhub-username>/devops-frontend:${{ github.sha }} \
+            -t ${{ secrets.DOCKER_USERNAME }}/devops-frontend:${{ github.sha }} \
             ./frontend/app
-          docker push <dockerhub-username>/devops-frontend:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/devops-frontend:${{ github.sha }}
 
   deploy-to-kubernetes:
     name: Deploy to Kubernetes
@@ -43,7 +43,7 @@ jobs:
     needs: build-and-push-images
 
     steps:
-      # 1️⃣ Checkout repository (needed if manifests are in repo)
+      # 1️⃣ Checkout repository (needed for manifests)
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -58,13 +58,13 @@ jobs:
         run: |
           echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
 
-      # 4️⃣ Deploy backend using YAML
+      # 4️⃣ Deploy backend
       - name: Deploy Backend
         run: |
           kubectl apply -f K8/backend/deployment.yaml
           kubectl apply -f K8/backend/service.yaml
 
-      # 5️⃣ Deploy frontend using YAML
+      # 5️⃣ Deploy frontend
       - name: Deploy Frontend
         run: |
           kubectl apply -f K8/frontend/deployment.yaml
