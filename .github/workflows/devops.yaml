@@ -52,21 +52,16 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1   
+          aws-region: us-east-1
 
-      - name: Initialize Terraform
+      - name: Terraform Init
         run: terraform init -chdir=Terraform/
 
       - name: Terraform Plan
         run: terraform plan -chdir=Terraform/
 
-      - name: Apply Terraform
+      - name: Terraform Apply
         run: terraform apply -auto-approve -chdir=Terraform/
-
-      - name: Get kubeconfig
-        id: kubeconfig
-        run: |
-          terraform output -raw kubeconfig > $HOME/.kube/config
 
   deploy-to-kubernetes:
     name: Deploy to Kubernetes
@@ -77,15 +72,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'v1.27.0'
 
-      - name: Configure kubeconfig
+      - name: Get kubeconfig from AWS EKS
         run: |
-          mkdir -p $HOME/.kube
-          cp $HOME/.kube/config $HOME/.kube/config
+          aws eks update-kubeconfig --name <YOUR_EKS_CLUSTER_NAME> --region us-east-1
 
       - name: Deploy Backend
         run: |
