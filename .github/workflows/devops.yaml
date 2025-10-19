@@ -54,6 +54,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Clean Terraform directory
+        run: rm -rf Terraform/.terraform Terraform/.terraform.lock.hcl
+
       - name: Terraform Init
         run: |
           cd Terraform
