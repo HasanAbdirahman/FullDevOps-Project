@@ -17,14 +17,12 @@ module "vpc" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "21.4.0"
+  version = "21.4.0"  # Updated version
 
-  cluster = {
-    name    = var.cluster_name
-    version = var.cluster_version
-    vpc_id  = module.vpc.vpc_id
-    subnets = module.vpc.private_subnets
-  }
+  cluster_name    = var.cluster_name
+  cluster_version = var.cluster_version
+  subnets         = module.vpc.private_subnets
+  vpc_id          = module.vpc.vpc_id
 
   node_groups = {
     default = {
