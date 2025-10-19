@@ -55,13 +55,13 @@ jobs:
           aws-region: us-east-1   
 
       - name: Initialize Terraform
-        run: terraform init -chdir=terraform/
+        run: terraform init -chdir=Terraform/
 
       - name: Terraform Plan
-        run: terraform plan -chdir=terraform/
+        run: terraform plan -chdir=Terraform/
 
       - name: Apply Terraform
-        run: terraform apply -auto-approve -chdir=terraform/
+        run: terraform apply -auto-approve -chdir=Terraform/
 
       - name: Get kubeconfig
         id: kubeconfig
