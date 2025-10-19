@@ -1,117 +1,41 @@
-name: CI/CD DevOps Pipeline
 
-on:
-  push:
-    branches:
-      - main
+# VPC Module
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "4.0.2"
 
-env:
-  AWS_REGION: us-east-1
-  CLUSTER_NAME: dev-eks-cluster
-  CLUSTER_VERSION: 1.28
+  name = "eks-vpc"
+  cidr = "10.0.0.0/16"
 
-jobs:
-  build-and-push-images:
-    name: Build and Push Docker Images
-    runs-on: ubuntu-latest
+  azs             = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+  enable_nat_gateway = true
+  single_nat_gateway = true
+}
 
-      - name: Docker login
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+# EKS Module
+module "eks" {
+  source          = "terraform-aws-modules/eks/aws"
+  version         = "21.1.0"
 
-      - name: Build Backend Image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/devops-backend:${{ github.sha }} ./backend
-          docker push ${{ secrets.DOCKER_USERNAME }}/devops-backend:${{ github.sha }}
+  cluster_name    = var.cluster_name
+  cluster_version = var.cluster_version
+  subnets         = module.vpc.private_subnets
+  vpc_id          = module.vpc.vpc_id
 
-      - name: Build Frontend Image
-        run: |
-          docker build \
-            --build-arg REACT_APP_API_URL=http://backend-service:4000/api \
-            -t ${{ secrets.DOCKER_USERNAME }}/devops-frontend:${{ github.sha }} \
-            ./frontend/app
-          docker push ${{ secrets.DOCKER_USERNAME }}/devops-frontend:${{ github.sha }}
+  node_groups = {
+    default = {
+      desired_capacity = 2
+      max_capacity     = 3
+      min_capacity     = 1
+      instance_type    = "t3.medium"
+    }
+  }
 
-  deploy-to-terraform:
-    name: Deploy EKS with Terraform
-    runs-on: ubuntu-latest
-    needs: build-and-push-images
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.6.0
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Clean Terraform directory
-        run: rm -rf Terraform/.terraform Terraform/.terraform.lock.hcl
-
-      - name: Terraform Init
-        run: terraform init -upgrade -chdir=Terraform/
-
-      - name: Terraform Plan
-        run: |
-          terraform plan \
-            -var="aws_region=${{ env.AWS_REGION }}" \
-            -var="cluster_name=${{ env.CLUSTER_NAME }}" \
-            -var="cluster_version=${{ env.CLUSTER_VERSION }}" \
-            -chdir=Terraform/
-
-      - name: Terraform Apply
-        run: |
-          terraform apply -auto-approve \
-            -var="aws_region=${{ env.AWS_REGION }}" \
-            -var="cluster_name=${{ env.CLUSTER_NAME }}" \
-            -var="cluster_version=${{ env.CLUSTER_VERSION }}" \
-            -chdir=Terraform/
-
-  deploy-to-kubernetes:
-    name: Deploy to Kubernetes
-    runs-on: ubuntu-latest
-    needs: deploy-to-terraform
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.27.0'
-
-      - name: Get kubeconfig from AWS EKS
-        run: |
-          aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
-
-      - name: Deploy Backend
-        run: |
-          kubectl apply -f K8/backend/deployment.yaml
-          kubectl apply -f K8/backend/service.yaml
-
-      - name: Deploy Frontend
-        run: |
-          kubectl apply -f K8/frontend/deployment.yaml
-          kubectl apply -f K8/frontend/service.yaml
+  tags = {
+    Environment = "dev"
+    Project     = "DevOps-Project"
+  }
+}
