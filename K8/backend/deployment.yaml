@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: Backend-Container
-          image: nginx:1.14.2
+          image: hasanabdirahman/devops-backend:v1
           ports:
             - containerPort: 80
           resources:

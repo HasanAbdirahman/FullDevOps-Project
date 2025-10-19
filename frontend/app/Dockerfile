@@ -10,6 +10,10 @@ RUN npm install
 COPY . .
 
 # Build argument for backend API URL
+# make sure to run when building the image to not forget about the args
+# docker build --build-arg REACT_APP_API_URL=http://backend-service:4000/api 
+# -t myusername/devops-frontend:v1 ./frontend
+
 ARG REACT_APP_API_URL
 
 # Pass build argument as env variable for React build

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend-container
-          image: nginx:1.14.2
+          image: hasanabdirahman/devops-frontend:v1
           ports:
             - containerPort: 80
           resources:
