@@ -94,6 +94,7 @@ docker build -t backend-app .
 docker run -p 8080:8080 backend-app
 ```
 
+
 ### Frontend
 ```bash
 cd frontend
@@ -165,3 +166,6 @@ Feel free to fork, modify, and enhance for your own learning or deployments.
 
 **💡 Author:** Hasan Abdirahman  
 **📘 Purpose:** Educational DevOps demonstration project integrating Terraform, Docker, Kubernetes, and GitHub Actions.
+````
+
+Would you like me to add a short **“How It Works” diagram section** (e.g., describing the flow from GitHub Actions → Terraform → EKS → Kubernetes deployment)? It would make the README even more visually appealing.
