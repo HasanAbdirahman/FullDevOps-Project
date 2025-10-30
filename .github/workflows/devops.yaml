@@ -6,6 +6,7 @@ on:
       - main
 
 jobs:
+  # ------------------ BUILD & PUSH ------------------
   build-and-push-images:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
@@ -14,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx (for caching and multi-platform builds)
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
@@ -52,6 +53,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
 
 
+  # ------------------ TERRAFORM DEPLOY ------------------
   deploy-to-terraform:
     name: Deploy EKS with Terraform
     runs-on: ubuntu-latest
@@ -72,16 +74,11 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      
+
       - name: Terraform Init
         run: |
           cd Terraform
           terraform init -upgrade
-
-      - name: Terraform Plan
-        run: |
-          cd Terraform
-          terraform plan
 
       - name: Terraform Apply
         run: |
@@ -89,6 +86,7 @@ jobs:
           terraform apply -auto-approve
 
 
+  # ------------------ K8S DEPLOY ------------------
   deploy-to-kubernetes:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
@@ -110,9 +108,29 @@ jobs:
         with:
           version: 'v1.27.0'
 
-      - name: Get kubeconfig from AWS EKS
+      - name: Get cluster name from Terraform
+        id: tf-output
         run: |
-          aws eks update-kubeconfig --name devops-eks-cluster --region us-east-1
+          cd Terraform
+          terraform output -raw cluster_name > ../cluster_name.txt
+
+      - name: Set cluster name as environment variable
+        run: echo "CLUSTER_NAME=$(cat cluster_name.txt)" >> $GITHUB_ENV
+
+      - name: Wait for EKS cluster to be ready
+        run: |
+          for i in {1..10}; do
+            if aws eks describe-cluster --name $CLUSTER_NAME --region us-east-1 >/dev/null 2>&1; then
+              echo "Cluster is ready!"
+              break
+            fi
+            echo "Waiting for EKS cluster to be ready..."
+            sleep 30
+          done
+
+      - name: Configure kubeconfig
+        run: |
+          aws eks update-kubeconfig --name $CLUSTER_NAME --region us-east-1
 
       - name: Deploy Backend
         run: |
