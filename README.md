@@ -95,7 +95,14 @@ docker run -p 8080:8080 backend-app
 ```
 
 ### Frontend
-If a frontend directory exists, follow the same steps with its Dockerfile.
+```bash
+cd frontend
+docker build -t frontend-app .
+docker run -p 3000:3000 frontend-app
+```
+
+The frontend service is containerized just like the backend.  
+It typically runs on port **3000**, and communicates with the backend API through the internal Kubernetes service once deployed.
 
 ---
 
@@ -158,4 +165,3 @@ Feel free to fork, modify, and enhance for your own learning or deployments.
 
 **💡 Author:** Hasan Abdirahman  
 **📘 Purpose:** Educational DevOps demonstration project integrating Terraform, Docker, Kubernetes, and GitHub Actions.
-````
